@@ -23,4 +23,5 @@ public class PackageInfo {
     /** Rủi ro tối đa trên vốn */
     private String maxRiskPercent;
 
+
 }

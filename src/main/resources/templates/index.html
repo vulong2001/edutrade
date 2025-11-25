@@ -29,6 +29,60 @@
             gap: 15px;
             font-size: 14px;
         }
+        /* Container tabs */
+        .markets-tabs {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE 10+ */
+            padding: 0;
+            margin: 0;
+        }
+
+        .markets-tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
+        }
+
+        /* List inside tabs */
+        .markets-tabs ul {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Each category */
+        .market-categories {
+            margin-right: 12px;
+        }
+
+        /* Button style */
+        .market-categories__item {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 16px;  /* tương đương ui-text_size-m */
+            font-weight: 500; /* tương đương ui-text_fontWeight-500 */
+            line-height: 1.2; /* tương đương ui-text_lineHeight-100 */
+            color: #333;      /* màu chữ mặc định */
+            transition: all 0.2s ease;
+            border-radius: 8px;
+        }
+
+        /* Active tab */
+        .market-categories__item_active,
+        .market-categories__item:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* Responsive: scroll khi nhỏ màn hình */
+        @media (max-width: 768px) {
+            .markets-tabs {
+                flex-wrap: nowrap;
+            }
+        }
 
         .topbar i {
             cursor: pointer;
@@ -318,12 +372,73 @@
             </div>
         </div>
     </div>
+    <table>
+        <tbody>
 
-    <!-- Pagination -->
-    <div class="swiper-pagination"></div>
-</div>
+        <div class="markets-tabs container hide-scroll-bar">
+            <ul>
+                <li class="market-categories market-categories_active" data-title="Phổ biến" id="global_Popular">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative market-categories__item_active">
+                        Phổ biến
+                    </button>
+                </li>
 
-<!-- Pricing Section -->
+                <li class="market-categories" data-title="Kim loại" data-url="/trading/metals" id="menu_spot_metals">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative">
+                        Kim loại
+                    </button>
+                </li>
+
+                <li class="market-categories" data-title="Chỉ số" data-url="/trading/indices" id="menu_spot_indices">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative">
+                        Chỉ số
+                    </button>
+                </li>
+
+                <li class="market-categories" data-title="Hợp đồng tương lai" data-url="/trading/futures" id="menu_futures">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative">
+                        Hợp đồng tương lai
+                    </button>
+                </li>
+
+                <li class="market-categories" data-title="Năng lượng" data-url="/trading/energies" id="menu_spot_energies">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative">
+                        Năng lượng
+                    </button>
+                </li>
+
+                <li class="market-categories" data-title="Cổ phiếu" data-url="/trading/shares/page/1" id="menu_shares">
+                    <button type="button" class="market-categories__item ui-text ui-text_size-m ui-text_lineHeight-100 ui-text_fontWeight-500 ui-text_type-alternative">
+                        Cổ phiếu
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+
+
+
+        </tbody>
+
+
+    </table>
+
+    <ul>
+        <th:block th:each="c : ${categories}">
+            <li class="market-categories"
+                th:classappend="${c.active} ? ' market-categories_active'">
+
+                <button class="market-categories__item"
+                        th:attr="data-url=${c.url}">
+                    <span th:text="${c.title}"></span>
+                </button>
+
+            </li>
+        </th:block>
+    </ul>
+
+
+    <!-- Pricing Section -->
 <div class="pricing-section">
     <!-- First Table - Gói 3 tháng -->
     <div class="pricing-tables" th:if="${packages != null && packages.size() > 0}">
@@ -402,7 +517,50 @@
         },
     });
 </script>
-</body>
+    <script>
+        const StockUpdateManager = {
+            config: { autoUpdateInterval: 5*60*1000, apiBaseUrl: '/api/slides' },
 
+            init() {
+                console.log('🚀 Stock Update Manager initialized');
+                setTimeout(() => this.autoUpdateAll(), 2000);
+                this.startAutoUpdate();
+            },
 
+            async autoUpdateAll() {
+                try {
+                    const res = await fetch(`${this.config.apiBaseUrl}/auto-update`, {method: 'POST'});
+                    if (res.ok) {
+                        console.log('✅ ' + await res.text());
+                        this.reloadSwiper();
+                    }
+                } catch (e) { console.error('❌', e); }
+            },
+
+            reloadSwiper() {
+                if (typeof swiper !== 'undefined') {
+                    document.querySelectorAll('.swiper-slide-inner').forEach(slide => {
+                        const bg = slide.style.backgroundImage;
+                        if (bg) {
+                            const url = bg.match(/url\(['"]?([^'"]+)['"]?\)/);
+                            if (url && url[1]) {
+                                slide.style.backgroundImage = `url('${url[1].split('?')[0]}?${Date.now()}')`;
+                            }
+                        }
+                    });
+                    swiper.update();
+                }
+            },
+
+            startAutoUpdate() {
+                setInterval(() => this.autoUpdateAll(), this.config.autoUpdateInterval);
+                console.log(`⏰ Auto-update: every ${this.config.autoUpdateInterval/60000} min`);
+            }
+        };
+
+        document.readyState === 'loading'
+            ? document.addEventListener('DOMContentLoaded', () => StockUpdateManager.init())
+            : StockUpdateManager.init();
+    </script>
+    </body>
 </html>

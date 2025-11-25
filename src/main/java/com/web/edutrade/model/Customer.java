@@ -23,4 +23,9 @@ public class Customer {
     private String phone;
     @AssertTrue(message = "Bạn cần đồng ý điều khoản để tiếp tục")
     private Boolean flagProvision ;
+
+
+
+
+
 }
